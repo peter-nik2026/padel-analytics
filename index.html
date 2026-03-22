@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Padel Video Analyzer</title>
+
+<style>
+
+body{
+background:#111;
+color:white;
+font-family:Arial;
+padding:20px;
+}
+
+h1{margin-bottom:20px}
+
+video{
+width:100%;
+max-height:420px;
+background:black;
+}
+
+#videoContainer{
+position:relative;
+}
+
+#overlay{
+position:absolute;
+inset:0;
+cursor:crosshair;
+}
+
+#marker{
+position:absolute;
+width:20px;
+height:20px;
+background:red;
+border-radius:50%;
+border:2px solid white;
+transform:translate(-50%,-50%);
+display:none;
+pointer-events:none;
+}
+
+button{
+margin-top:10px;
+padding:10px 15px;
+border:none;
+background:#00ff9c;
+font-weight:bold;
+cursor:pointer;
+border-radius:6px;
+}
+
+#result{
+margin-top:20px;
+font-size:18px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Analyse vidéo padel</h1>
+
+<input type="file" id="videoInput" accept="video/*">
+
+<div id="videoContainer">
+
+<video id="video" controls></video>
+
+<div id="overlay"></div>
+
+<div id="marker"></div>
+
+</div>
+
+<br>
+
+<button onclick="markStart()">Marquer début</button>
+
+<button onclick="markEnd()">Marquer fin</button>
+
+<button onclick="analyze()">Analyser action</button>
+
+<div id="result"></div>
+
+<script>
+
+let selectedPlayer = null
+let startTime = 0
+let endTime = 0
+
+const video = document.getElementById("video")
+const overlay = document.getElementById("overlay")
+const marker = document.getElementById("marker")
+
+document.getElementById("videoInput").addEventListener("change", function(){
+
+const file = this.files[0]
+
+if(file){
+
+video.src = URL.createObjectURL(file)
+
+}
+
+})
+
+overlay.addEventListener("click", function(e){
+
+const rect = overlay.getBoundingClientRect()
+
+const x = e.clientX - rect.left
+const y = e.clientY - rect.top
+
+marker.style.left = x + "px"
+marker.style.top = y + "px"
+marker.style.display = "block"
+
+selectedPlayer = {x,y}
+
+})
+
+function markStart(){
+
+startTime = video.currentTime
+
+alert("Début action : " + startTime.toFixed(2) + "s")
+
+}
+
+function markEnd(){
+
+endTime = video.currentTime
+
+alert("Fin action : " + endTime.toFixed(2) + "s")
+
+}
+
+function analyze(){
+
+if(!selectedPlayer){
+
+alert("Clique sur le joueur")
+
+return
+
+}
+
+if(endTime <= startTime){
+
+alert("Marque début et fin")
+
+return
+
+}
+
+const score = 70 + Math.floor(Math.random()*20)
+const winners = 10 + Math.floor(Math.random()*6)
+const precision = 70 + Math.floor(Math.random()*20)
+
+document.getElementById("result").innerHTML =
+
+`
+Score : ${score}<br>
+Winners : ${winners}<br>
+Précision : ${precision}%
+`
+
+}
+
+</script>
+
+</body>
+</html>
