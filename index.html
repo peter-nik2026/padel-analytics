@@ -3,417 +3,464 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Padel Analytics V13</title>
+<title>Padel Analytics V14</title>
 
 <style>
 :root{
---bg:#0c0d11;
---card:#17181e;
---accent:#00ff9c;
---accent2:#00b4ff;
---text:#ffffff;
---muted:#9a9a9a;
---radius:18px;
---nav:70px;
-font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  --bg:#0c0d11;
+  --card:#17181e;
+  --accent:#00ff9c;
+  --accent2:#00b4ff;
+  --text:#ffffff;
+  --muted:#9a9a9a;
+  --radius:18px;
+  --nav:70px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
 body{
-margin:0;
-background:var(--bg);
-color:var(--text);
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
 }
 
 .page{
-display:none;
-padding:24px;
-padding-bottom:100px;
+  display:none;
+  padding:24px;
+  padding-bottom:100px;
 }
 .page.active{display:block}
 
 h1{margin-bottom:20px}
 
 .card{
-background:var(--card);
-border-radius:var(--radius);
-padding:20px;
-margin-bottom:16px;
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:16px;
 }
 
 .score{
-font-size:56px;
-font-weight:900;
-color:var(--accent);
+  font-size:56px;
+  font-weight:900;
+  color:var(--accent);
 }
 
 button{
-padding:12px 16px;
-border:none;
-border-radius:10px;
-background:var(--accent);
-font-weight:700;
-cursor:pointer;
-margin-top:10px;
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  font-weight:700;
+  cursor:pointer;
+  margin-top:10px;
 }
 
 button.secondary{
-background:#333;
-color:white;
+  background:#333;
+  color:white;
 }
 
 video,img{
-width:100%;
-max-height:420px;
-object-fit:contain;
-background:black;
+  width:100%;
+  max-height:360px;
+  object-fit:contain;
+  background:black;
+  display:block;
+  margin-bottom:8px;
 }
 
 #videoContainer{
-position:relative;
+  position:relative;
 }
 
 #overlay{
-position:absolute;
-inset:0;
-display:none;
-cursor:crosshair;
-z-index:2;
+  position:absolute;
+  inset:0;
+  display:none;
+  cursor:crosshair;
+  z-index:2;
 }
 
 #marker{
-position:absolute;
-width:18px;
-height:18px;
-background:red;
-border-radius:50%;
-border:2px solid white;
-transform:translate(-50%,-50%);
-display:none;
-pointer-events:none;
-z-index:3;
+  position:absolute;
+  width:18px;
+  height:18px;
+  background:red;
+  border-radius:50%;
+  border:2px solid white;
+  transform:translate(-50%,-50%);
+  display:none;
+  pointer-events:none;
+  z-index:3;
 }
 
 .stat-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
-margin-top:16px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:16px;
 }
 
 .stat{
-background:#101217;
-padding:10px;
-border-radius:10px;
-text-align:center;
+  background:#101217;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
 }
 
 .stat span{
-display:block;
-margin-top:4px;
-font-weight:800;
-color:var(--accent);
+  display:block;
+  margin-top:4px;
+  font-weight:800;
+  color:var(--accent);
 }
 
 .nav{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-height:var(--nav);
-background:#111;
-display:flex;
-justify-content:space-around;
-align-items:center;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:var(--nav);
+  background:#111;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
 }
 
 .nav button{
-background:none;
-border:none;
-color:#888;
-cursor:pointer;
+  background:none;
+  border:none;
+  color:#888;
+  cursor:pointer;
 }
 
 .nav button.active{
-color:var(--accent);
+  color:var(--accent);
 }
 
 canvas{
-width:100%;
-height:200px;
-background:#101217;
-border-radius:16px;
-margin-top:16px;
+  width:100%;
+  height:200px;
+  background:#101217;
+  border-radius:16px;
+  margin-top:16px;
 }
 
 .session{
-background:#14161c;
-padding:14px;
-border-radius:10px;
-margin-top:10px;
+  background:#14161c;
+  padding:14px;
+  border-radius:10px;
+  margin-top:10px;
+  font-size:13px;
 }
 
+#timeInfo{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+@media (max-width:600px){
+  .page{
+    padding:16px;
+    padding-bottom:90px;
+  }
+  h1{font-size:22px;}
+  .card{padding:16px;}
+}
 </style>
 </head>
 <body>
 
 <!-- DASHBOARD -->
 <section id="home" class="page active">
-<h1>Dashboard</h1>
+  <h1>Dashboard</h1>
 
-<div class="card">
-Score Global
-<div class="score" id="globalScore">78</div>
-</div>
+  <div class="card">
+    Score global
+    <div class="score" id="globalScore">78</div>
+  </div>
 
-<canvas id="chart"></canvas>
+  <canvas id="chart"></canvas>
 
-<button onclick="showPage('camera')">Analyse caméra</button>
-<button onclick="showPage('videoPage')" class="secondary">Analyse vidéo</button>
-
+  <button onclick="showPage('camera')">Analyse caméra</button>
+  <button onclick="showPage('videoPage')" class="secondary">Analyse vidéo</button>
 </section>
 
 <!-- CAMERA -->
 <section id="camera" class="page">
-<h1>Capture caméra</h1>
+  <h1>Capture caméra</h1>
 
-<video id="cameraVideo" autoplay playsinline muted></video>
+  <video id="cameraVideo" autoplay playsinline muted></video>
 
-<button onclick="enableCamera()">Activer caméra</button>
-<button onclick="disableCamera()" class="secondary">Éteindre caméra</button>
+  <button onclick="enableCamera()">Activer caméra</button>
+  <button onclick="disableCamera()" class="secondary">Éteindre caméra</button>
 
-<button onclick="takePhoto()">Prendre photo</button>
+  <button onclick="takePhoto()">Prendre photo</button>
 
-<img id="photoPreview">
+  <img id="photoPreview">
 
-<button onclick="analyzeCamera()">Analyser</button>
-
+  <button onclick="analyzeCamera()">Analyser</button>
 </section>
 
 <!-- VIDEO ANALYSIS -->
 <section id="videoPage" class="page">
-<h1>Analyse vidéo</h1>
+  <h1>Analyse vidéo</h1>
 
-<input type="file" id="videoInput" accept="video/*">
+  <input type="file" id="videoInput" accept="video/*">
 
-<div id="videoContainer">
-<video id="videoPlayer" controls></video>
-<div id="overlay"></div>
-<div id="marker"></div>
-</div>
+  <div id="videoContainer">
+    <video id="videoPlayer" controls></video>
+    <div id="overlay"></div>
+    <div id="marker"></div>
+  </div>
 
-<button id="toggleSelect">Mode sélection joueur</button>
+  <button id="toggleSelect">Mode sélection joueur</button>
 
-<h3>Sélection action</h3>
+  <h3>Sélection de l'action</h3>
 
-Début :
-<input type="range" id="startRange" min="0" step="0.1" value="0">
+  Début :
+  <input type="range" id="startRange" min="0" step="0.1" value="0">
 
-Fin :
-<input type="range" id="endRange" min="0" step="0.1" value="0">
+  Fin :
+  <input type="range" id="endRange" min="0" step="0.1" value="0">
 
-<div id="timeInfo"></div>
+  <div id="timeInfo">Début: 0.00s | Fin: 0.00s | Durée: 0.00s</div>
 
-<button onclick="analyzeVideo()">Analyser action</button>
-
+  <button onclick="analyzeVideo()">Analyser cette action</button>
 </section>
 
 <!-- ANALYSIS -->
 <section id="analysis" class="page">
-<h1>Résultat</h1>
+  <h1>Résultat</h1>
 
-<div class="card">
-<div class="score" id="analysisScore"></div>
-</div>
+  <div class="card">
+    <div class="score" id="analysisScore"></div>
+  </div>
 
-<div class="stat-grid">
-<div class="stat">Winners<span id="statWinners"></span></div>
-<div class="stat">Précision<span id="statPrecision"></span></div>
-<div class="stat">Service<span id="statService"></span></div>
-</div>
+  <div class="stat-grid">
+    <div class="stat">Winners<span id="statWinners"></span></div>
+    <div class="stat">Précision<span id="statPrecision"></span></div>
+    <div class="stat">Service<span id="statService"></span></div>
+  </div>
 
-<button onclick="showPage('history')">Voir historique</button>
-
+  <button onclick="showPage('history')">Voir historique</button>
 </section>
 
 <!-- HISTORY -->
 <section id="history" class="page">
-<h1>Historique</h1>
-<div id="sessions"></div>
+  <h1>Historique des actions</h1>
+  <div id="sessions"></div>
 </section>
 
 <!-- NAVIGATION -->
 <nav class="nav">
-<button onclick="showPage('home')" class="active">Accueil</button>
-<button onclick="showPage('camera')">Caméra</button>
-<button onclick="showPage('videoPage')">Vidéo</button>
-<button onclick="showPage('history')">Stats</button>
+  <button onclick="showPage('home')" class="active">Accueil</button>
+  <button onclick="showPage('camera')">Caméra</button>
+  <button onclick="showPage('videoPage')">Vidéo</button>
+  <button onclick="showPage('history')">Stats</button>
 </nav>
 
 <script>
-
 function showPage(id){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"))
-document.getElementById(id).classList.add("active")
-document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"))
-if(id==="home")document.querySelectorAll(".nav button")[0].classList.add("active")
-if(id==="camera")document.querySelectorAll(".nav button")[1].classList.add("active")
-if(id==="videoPage")document.querySelectorAll(".nav button")[2].classList.add("active")
-if(id==="history")document.querySelectorAll(".nav button")[3].classList.add("active")
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  if(id==="home")document.querySelectorAll(".nav button")[0].classList.add("active");
+  if(id==="camera")document.querySelectorAll(".nav button")[1].classList.add("active");
+  if(id==="videoPage")document.querySelectorAll(".nav button")[2].classList.add("active");
+  if(id==="history")document.querySelectorAll(".nav button")[3].classList.add("active");
 }
 
 /* CAMERA */
 
-let camStream=null
-let currentPhoto=null
+let camStream=null;
+let currentPhoto=null;
 
 async function enableCamera(){
-camStream=await navigator.mediaDevices.getUserMedia({video:true})
-document.getElementById("cameraVideo").srcObject=camStream
+  camStream=await navigator.mediaDevices.getUserMedia({video:true});
+  document.getElementById("cameraVideo").srcObject=camStream;
 }
 
 function disableCamera(){
-if(camStream){
-camStream.getTracks().forEach(t=>t.stop())
-camStream=null
-}
+  if(camStream){
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream=null;
+  }
 }
 
 function takePhoto(){
-const video=document.getElementById("cameraVideo")
-const canvas=document.createElement("canvas")
-canvas.width=video.videoWidth
-canvas.height=video.videoHeight
-canvas.getContext("2d").drawImage(video,0,0)
-currentPhoto=canvas.toDataURL("image/png")
-document.getElementById("photoPreview").src=currentPhoto
+  const video=document.getElementById("cameraVideo");
+  const canvas=document.createElement("canvas");
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  canvas.getContext("2d").drawImage(video,0,0);
+  currentPhoto=canvas.toDataURL("image/png");
+  document.getElementById("photoPreview").src=currentPhoto;
 }
 
 function analyzeCamera(){
-generateAnalysis()
+  generateAnalysis("Caméra", null, null);
 }
 
 /* VIDEO */
 
-let selectedPlayer=null
-let selectMode=false
+let selectedPlayer=null;
+let selectMode=false;
 
-const videoPlayer=document.getElementById("videoPlayer")
-const overlay=document.getElementById("overlay")
-const marker=document.getElementById("marker")
+const videoPlayer=document.getElementById("videoPlayer");
+const overlay=document.getElementById("overlay");
+const marker=document.getElementById("marker");
+const startRange=document.getElementById("startRange");
+const endRange=document.getElementById("endRange");
+const timeInfo=document.getElementById("timeInfo");
 
 document.getElementById("videoInput").addEventListener("change",function(){
-const file=this.files[0]
-if(file){
-videoPlayer.src=URL.createObjectURL(file)
-videoPlayer.onloadedmetadata=function(){
-document.getElementById("startRange").max=videoPlayer.duration
-document.getElementById("endRange").max=videoPlayer.duration
-document.getElementById("endRange").value=videoPlayer.duration
-updateTimeInfo()
-}
-}
-})
+  const file=this.files[0];
+  if(file){
+    videoPlayer.src=URL.createObjectURL(file);
+    videoPlayer.onloadedmetadata=function(){
+      startRange.max=videoPlayer.duration;
+      endRange.max=videoPlayer.duration;
+      endRange.value=videoPlayer.duration;
+      updateTimeInfo();
+    }
+  }
+});
 
 document.getElementById("toggleSelect").addEventListener("click",function(){
-selectMode=!selectMode
-overlay.style.display=selectMode?"block":"none"
-this.textContent=selectMode?"Quitter sélection":"Mode sélection joueur"
-})
+  selectMode=!selectMode;
+  overlay.style.display=selectMode?"block":"none";
+  this.textContent=selectMode?"Quitter sélection joueur":"Mode sélection joueur";
+});
 
 overlay.addEventListener("click",function(e){
-const rect=overlay.getBoundingClientRect()
-const x=e.clientX-rect.left
-const y=e.clientY-rect.top
-marker.style.left=x+"px"
-marker.style.top=y+"px"
-marker.style.display="block"
-selectedPlayer={x,y}
-})
+  const rect=overlay.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  marker.style.left=x+"px";
+  marker.style.top=y+"px";
+  marker.style.display="block";
+  selectedPlayer={x,y};
+});
 
-document.getElementById("startRange").addEventListener("input",updateTimeInfo)
-document.getElementById("endRange").addEventListener("input",updateTimeInfo)
+startRange.addEventListener("input",updateTimeInfo);
+endRange.addEventListener("input",updateTimeInfo);
 
 function updateTimeInfo(){
-const start=document.getElementById("startRange").value
-const end=document.getElementById("endRange").value
-document.getElementById("timeInfo").innerHTML=
-`Début: ${Number(start).toFixed(2)}s | Fin: ${Number(end).toFixed(2)}s`
+  const start=parseFloat(startRange.value);
+  const end=parseFloat(endRange.value);
+  const duration=Math.max(0,end-start);
+  timeInfo.innerHTML=
+    `Début: ${start.toFixed(2)}s | Fin: ${end.toFixed(2)}s | Durée: ${duration.toFixed(2)}s`;
 }
 
 function analyzeVideo(){
-if(!selectedPlayer){
-alert("Sélectionne un joueur")
-return
-}
-generateAnalysis()
-}
-
-/* ANALYSIS CORE */
-
-function generateAnalysis(){
-showPage("analysis")
-
-const score=70+Math.floor(Math.random()*20)
-const winners=10+Math.floor(Math.random()*6)
-const precision=70+Math.floor(Math.random()*20)
-const service=70+Math.floor(Math.random()*20)
-
-document.getElementById("analysisScore").textContent=score
-document.getElementById("statWinners").textContent=winners
-document.getElementById("statPrecision").textContent=precision+"%"
-document.getElementById("statService").textContent=service+"%"
-
-saveSession(score,winners,precision)
+  if(!videoPlayer.src){
+    alert("Importe une vidéo.");
+    return;
+  }
+  if(!selectedPlayer){
+    alert("Sélectionne un joueur (Mode sélection joueur).");
+    return;
+  }
+  const start=parseFloat(startRange.value);
+  const end=parseFloat(endRange.value);
+  if(end<=start){
+    alert("Fin doit être après début.");
+    return;
+  }
+  generateAnalysis("Vidéo", start, end);
 }
 
-/* STORAGE */
+/* ANALYSE COMMUNE (CAMÉRA / VIDÉO) */
 
-function saveSession(score,winners,precision){
-let sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
-sessions.push({date:new Date().toLocaleString(),score,winners,precision})
-localStorage.setItem("sessions",JSON.stringify(sessions))
-renderSessions()
-updateScore()
+function generateAnalysis(sourceType, start, end){
+  showPage("analysis");
+
+  const score=70+Math.floor(Math.random()*20);
+  const winners=10+Math.floor(Math.random()*6);
+  const precision=70+Math.floor(Math.random()*20);
+  const service=70+Math.floor(Math.random()*20);
+
+  document.getElementById("analysisScore").textContent=score;
+  document.getElementById("statWinners").textContent=winners;
+  document.getElementById("statPrecision").textContent=precision+"%";
+  document.getElementById("statService").textContent=service+"%";
+
+  saveSession({
+    type: sourceType,
+    start,
+    end,
+    duration: (start!=null && end!=null)? (end-start) : null,
+    score,
+    winners,
+    precision,
+    service
+  });
+}
+
+/* STORAGE / HISTORIQUE */
+
+function saveSession(sess){
+  let sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
+  sessions.push({
+    date:new Date().toLocaleString(),
+    ...sess
+  });
+  localStorage.setItem("sessions_v14",JSON.stringify(sessions));
+  renderSessions();
+  updateScore();
 }
 
 function renderSessions(){
-const container=document.getElementById("sessions")
-const sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
-container.innerHTML=""
-sessions.reverse().forEach(s=>{
-container.innerHTML+=`
-<div class="session">
-Score ${s.score} | ${s.date}
-</div>
-`
-})
+  const container=document.getElementById("sessions");
+  const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
+  container.innerHTML="";
+  sessions.slice().reverse().forEach(s=>{
+    const typeLabel = s.type || "Inconnu";
+    const timeLabel = (s.start!=null && s.end!=null)
+      ? `Action ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s (durée ${(s.duration||0).toFixed(2)}s)`
+      : `Action sans timing (capture caméra)`;
+
+    container.innerHTML+=`
+      <div class="session">
+        <b>${typeLabel}</b> • Score ${s.score} • ${s.date}<br>
+        ${timeLabel}<br>
+        Winners ${s.winners} • Précision ${s.precision}% • Service ${s.service}%
+      </div>
+    `;
+  });
 }
 
+/* SCORE GLOBAL */
+
 function updateScore(){
-const sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
-if(!sessions.length)return
-const avg=Math.round(sessions.reduce((a,s)=>a+s.score,0)/sessions.length)
-document.getElementById("globalScore").textContent=avg
+  const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
+  if(!sessions.length) return;
+  const avg=Math.round(sessions.reduce((a,s)=>a+s.score,0)/sessions.length);
+  document.getElementById("globalScore").textContent=avg;
 }
 
 /* CHART SIMPLE */
 
-const ctx=document.getElementById("chart").getContext("2d")
-ctx.canvas.width=600
-ctx.canvas.height=200
-ctx.beginPath()
-ctx.moveTo(0,150)
-ctx.lineTo(100,120)
-ctx.lineTo(200,140)
-ctx.lineTo(300,110)
-ctx.lineTo(400,100)
-ctx.strokeStyle="#00ff9c"
-ctx.lineWidth=3
-ctx.stroke()
+const ctx=document.getElementById("chart").getContext("2d");
+ctx.canvas.width=600;
+ctx.canvas.height=200;
+ctx.beginPath();
+ctx.moveTo(0,150);
+ctx.lineTo(100,120);
+ctx.lineTo(200,140);
+ctx.lineTo(300,110);
+ctx.lineTo(400,100);
+ctx.strokeStyle="#00ff9c";
+ctx.lineWidth=3;
+ctx.stroke();
 
-renderSessions()
-updateScore()
-
+/* INIT */
+renderSessions();
+updateScore();
 </script>
 
 </body>
