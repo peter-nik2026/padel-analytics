@@ -2,177 +2,250 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Padel Video Analyzer</title>
 
 <style>
-
 body{
-background:#111;
-color:white;
-font-family:Arial;
-padding:20px;
+  background:#111;
+  color:white;
+  font-family:Arial,sans-serif;
+  padding:20px;
 }
-
-h1{margin-bottom:20px}
-
+h1,h2,h3{margin-bottom:12px}
 video{
-width:100%;
-max-height:420px;
-background:black;
+  width:100%;
+  max-height:420px;
+  background:black;
 }
-
 #videoContainer{
-position:relative;
+  position:relative;
 }
-
 #overlay{
-position:absolute;
-inset:0;
-cursor:crosshair;
+  position:absolute;
+  inset:0;
+  z-index:2;
+  cursor:crosshair;
 }
-
 #marker{
-position:absolute;
-width:20px;
-height:20px;
-background:red;
-border-radius:50%;
-border:2px solid white;
-transform:translate(-50%,-50%);
-display:none;
-pointer-events:none;
+  position:absolute;
+  width:20px;
+  height:20px;
+  background:red;
+  border-radius:50%;
+  border:2px solid white;
+  transform:translate(-50%,-50%);
+  display:none;
+  pointer-events:none;
+  z-index:3;
 }
-
 button{
-margin-top:10px;
-padding:10px 15px;
-border:none;
-background:#00ff9c;
-font-weight:bold;
-cursor:pointer;
-border-radius:6px;
+  margin-top:10px;
+  margin-right:8px;
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  background:#00ff9c;
+  font-weight:bold;
+  cursor:pointer;
 }
-
-#result{
-margin-top:20px;
-font-size:18px;
+.info{
+  margin-top:10px;
+  padding:10px;
+  background:#1d1d1d;
+  border-radius:8px;
 }
-
+.session{
+  background:#222;
+  padding:10px;
+  margin-top:10px;
+  border-radius:6px;
+}
 </style>
-
 </head>
-
 <body>
 
-<h1>Analyse vidéo padel</h1>
+<h1>Padel Analytics</h1>
 
+<h3>1. Importer une vidéo</h3>
 <input type="file" id="videoInput" accept="video/*">
 
 <div id="videoContainer">
-
-<video id="video" controls></video>
-
-<div id="overlay"></div>
-
-<div id="marker"></div>
-
+  <video id="video" controls></video>
+  <div id="overlay"></div>
+  <div id="marker"></div>
 </div>
 
-<br>
+<div class="info" id="statusBox">
+  Joueur : non sélectionné<br>
+  Début : -<br>
+  Fin : -
+</div>
 
-<button onclick="markStart()">Marquer début</button>
+<h3>2. Marquer l’action</h3>
+<button id="btnStart">Marquer début</button>
+<button id="btnEnd">Marquer fin</button>
+<button id="btnAnalyze">Analyser action</button>
 
-<button onclick="markEnd()">Marquer fin</button>
-
-<button onclick="analyze()">Analyser action</button>
-
+<h2>Résultat</h2>
 <div id="result"></div>
 
+<h2>Historique</h2>
+<div id="sessions"></div>
+
 <script>
+let selectedPlayer = null;
+let startTime = null;
+let endTime = null;
 
-let selectedPlayer = null
-let startTime = 0
-let endTime = 0
-
-const video = document.getElementById("video")
-const overlay = document.getElementById("overlay")
-const marker = document.getElementById("marker")
+const video = document.getElementById("video");
+const overlay = document.getElementById("overlay");
+const marker = document.getElementById("marker");
+const result = document.getElementById("result");
+const statusBox = document.getElementById("statusBox");
 
 document.getElementById("videoInput").addEventListener("change", function(){
-
-const file = this.files[0]
-
-if(file){
-
-video.src = URL.createObjectURL(file)
-
-}
-
-})
+  const file = this.files[0];
+  if(file){
+    video.src = URL.createObjectURL(file);
+    selectedPlayer = null;
+    startTime = null;
+    endTime = null;
+    marker.style.display = "none";
+    result.innerHTML = "";
+    updateStatus();
+  }
+});
 
 overlay.addEventListener("click", function(e){
+  if(!video.src){
+    alert("Importe d'abord une vidéo.");
+    return;
+  }
 
-const rect = overlay.getBoundingClientRect()
+  const rect = overlay.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-const x = e.clientX - rect.left
-const y = e.clientY - rect.top
+  marker.style.left = x + "px";
+  marker.style.top = y + "px";
+  marker.style.display = "block";
 
-marker.style.left = x + "px"
-marker.style.top = y + "px"
-marker.style.display = "block"
+  selectedPlayer = { x, y };
+  updateStatus();
+});
 
-selectedPlayer = {x,y}
+document.getElementById("btnStart").addEventListener("click", function(){
+  if(!video.src){
+    alert("Importe d'abord une vidéo.");
+    return;
+  }
+  startTime = video.currentTime;
+  updateStatus();
+  alert("Début marqué à " + startTime.toFixed(2) + "s");
+});
 
-})
+document.getElementById("btnEnd").addEventListener("click", function(){
+  if(!video.src){
+    alert("Importe d'abord une vidéo.");
+    return;
+  }
+  endTime = video.currentTime;
+  updateStatus();
+  alert("Fin marquée à " + endTime.toFixed(2) + "s");
+});
 
-function markStart(){
+document.getElementById("btnAnalyze").addEventListener("click", function(){
+  if(!video.src){
+    alert("Importe d'abord une vidéo.");
+    return;
+  }
+  if(!selectedPlayer){
+    alert("Clique d'abord sur le joueur.");
+    return;
+  }
+  if(startTime === null || endTime === null){
+    alert("Marque le début et la fin.");
+    return;
+  }
+  if(endTime <= startTime){
+    alert("La fin doit être après le début.");
+    return;
+  }
 
-startTime = video.currentTime
+  const duration = endTime - startTime;
+  const score = 70 + Math.floor(Math.random()*20);
+  const winners = 10 + Math.floor(Math.random()*6);
+  const precision = 70 + Math.floor(Math.random()*20);
+  const service = 65 + Math.floor(Math.random()*20);
+  const volee = 60 + Math.floor(Math.random()*20);
+  const smash = 60 + Math.floor(Math.random()*20);
+  const bandeja = 55 + Math.floor(Math.random()*20);
 
-alert("Début action : " + startTime.toFixed(2) + "s")
+  result.innerHTML = `
+    <div class="session">
+      <b>Score :</b> ${score}<br>
+      <b>Action :</b> ${startTime.toFixed(2)}s → ${endTime.toFixed(2)}s (${duration.toFixed(2)}s)<br>
+      <b>Winners :</b> ${winners}<br>
+      <b>Précision :</b> ${precision}%<br>
+      <b>Service :</b> ${service}%<br>
+      <b>Volée :</b> ${volee}%<br>
+      <b>Smash :</b> ${smash}%<br>
+      <b>Bandeja :</b> ${bandeja}%
+    </div>
+  `;
 
+  saveSession({
+    score,
+    winners,
+    precision,
+    service,
+    volee,
+    smash,
+    bandeja,
+    start: startTime,
+    end: endTime,
+    duration
+  });
+});
+
+function updateStatus(){
+  statusBox.innerHTML = `
+    Joueur : ${selectedPlayer ? "sélectionné" : "non sélectionné"}<br>
+    Début : ${startTime !== null ? startTime.toFixed(2) + "s" : "-"}<br>
+    Fin : ${endTime !== null ? endTime.toFixed(2) + "s" : "-"}
+  `;
 }
 
-function markEnd(){
-
-endTime = video.currentTime
-
-alert("Fin action : " + endTime.toFixed(2) + "s")
-
+function saveSession(session){
+  let sessions = JSON.parse(localStorage.getItem("sessions_video") || "[]");
+  sessions.push({
+    date: new Date().toLocaleString(),
+    ...session
+  });
+  localStorage.setItem("sessions_video", JSON.stringify(sessions));
+  renderSessions();
 }
 
-function analyze(){
+function renderSessions(){
+  const container = document.getElementById("sessions");
+  const sessions = JSON.parse(localStorage.getItem("sessions_video") || "[]");
+  container.innerHTML = "";
 
-if(!selectedPlayer){
-
-alert("Clique sur le joueur")
-
-return
-
+  sessions.slice().reverse().forEach(s => {
+    container.innerHTML += `
+      <div class="session">
+        <b>Score ${s.score}</b> • ${s.date}<br>
+        Action ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s (${s.duration.toFixed(2)}s)<br>
+        Winners ${s.winners} • Précision ${s.precision}%<br>
+        Service ${s.service}% • Volée ${s.volee}% • Smash ${s.smash}% • Bandeja ${s.bandeja}%
+      </div>
+    `;
+  });
 }
 
-if(endTime <= startTime){
-
-alert("Marque début et fin")
-
-return
-
-}
-
-const score = 70 + Math.floor(Math.random()*20)
-const winners = 10 + Math.floor(Math.random()*6)
-const precision = 70 + Math.floor(Math.random()*20)
-
-document.getElementById("result").innerHTML =
-
-`
-Score : ${score}<br>
-Winners : ${winners}<br>
-Précision : ${precision}%
-`
-
-}
-
+renderSessions();
+updateStatus();
 </script>
 
 </body>
