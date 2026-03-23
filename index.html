@@ -2,96 +2,96 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Padel Video Analyzer V11</title>
+<title>Padel Video Analyzer PRO</title>
 
 <style>
 body{
-  background:#111;
+  background:#0f0f12;
   color:white;
   font-family:Arial;
   padding:20px;
 }
+
+h1{margin-bottom:20px}
+
 video{
   width:100%;
   max-height:420px;
   background:black;
 }
-#videoContainer{
+
+.container{
   position:relative;
 }
+
 #overlay{
   position:absolute;
   inset:0;
-  z-index:2;
   cursor:crosshair;
-  display:none;
 }
+
 #marker{
   position:absolute;
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
   background:red;
   border-radius:50%;
   border:2px solid white;
   transform:translate(-50%,-50%);
   display:none;
-  pointer-events:none;
-  z-index:3;
 }
+
+.timeline{
+  margin-top:20px;
+}
+
+input[type=range]{
+  width:100%;
+}
+
 button{
-  margin-top:10px;
-  margin-right:6px;
-  padding:10px 14px;
+  margin-top:15px;
+  padding:12px 16px;
   border:none;
   border-radius:8px;
   background:#00ff9c;
   font-weight:bold;
   cursor:pointer;
 }
-button.secondary{
-  background:#333;
-  color:white;
-}
-.info{
-  margin-top:10px;
-  padding:10px;
-  background:#1d1d1d;
-  border-radius:8px;
-}
+
 .session{
-  background:#222;
-  padding:10px;
+  background:#1e1e23;
+  padding:12px;
   margin-top:10px;
   border-radius:6px;
-  font-size:13px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>Analyse action padel</h1>
+<h1>Analyse Action Padel</h1>
 
 <input type="file" id="videoInput" accept="video/*">
 
-<div id="videoContainer">
+<div class="container">
   <video id="video" controls></video>
   <div id="overlay"></div>
   <div id="marker"></div>
 </div>
 
-<button id="selectModeBtn" class="secondary">
-Mode sélection joueur
-</button>
+<h3>Sélection de l'action</h3>
 
-<div class="info" id="statusBox">
-Joueur : non sélectionné<br>
-Début : -<br>
-Fin : -
+<div class="timeline">
+  Début :
+  <input type="range" id="startRange" min="0" step="0.1" value="0">
+  Fin :
+  <input type="range" id="endRange" min="0" step="0.1" value="0">
 </div>
 
-<button id="btnStart">Marquer début</button>
-<button id="btnEnd">Marquer fin</button>
-<button id="btnAnalyze">Analyser action</button>
+<div id="timeInfo"></div>
+
+<button onclick="analyze()">Analyser l'action</button>
 
 <h2>Résultat</h2>
 <div id="result"></div>
@@ -100,163 +100,149 @@ Fin : -
 <div id="sessions"></div>
 
 <script>
-let selectedPlayer=null;
-let startTime=null;
-let endTime=null;
-let selectMode=false;
 
-const video=document.getElementById("video");
-const overlay=document.getElementById("overlay");
-const marker=document.getElementById("marker");
-const statusBox=document.getElementById("statusBox");
-const result=document.getElementById("result");
-const selectBtn=document.getElementById("selectModeBtn");
+let selectedPlayer=null
+
+const video=document.getElementById("video")
+const overlay=document.getElementById("overlay")
+const marker=document.getElementById("marker")
+
+const startRange=document.getElementById("startRange")
+const endRange=document.getElementById("endRange")
+const timeInfo=document.getElementById("timeInfo")
 
 document.getElementById("videoInput").addEventListener("change",function(){
-  const file=this.files[0];
-  if(file){
-    video.src=URL.createObjectURL(file);
-    selectedPlayer=null;
-    startTime=null;
-    endTime=null;
-    marker.style.display="none";
-    result.innerHTML="";
-    updateStatus();
-  }
-});
 
-/* MODE SELECTION JOUEUR */
+const file=this.files[0]
 
-selectBtn.addEventListener("click",function(){
-  selectMode=!selectMode;
+if(file){
+video.src=URL.createObjectURL(file)
 
-  if(selectMode){
-    overlay.style.display="block";
-    selectBtn.textContent="Quitter sélection";
-  }else{
-    overlay.style.display="none";
-    selectBtn.textContent="Mode sélection joueur";
-  }
-});
+video.onloadedmetadata=function(){
 
-/* SELECTION JOUEUR */
+startRange.max=video.duration
+endRange.max=video.duration
+endRange.value=video.duration
 
-overlay.addEventListener("click",function(e){
-  if(!video.src) return;
+updateTimeInfo()
 
-  const rect=overlay.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
-
-  marker.style.left=x+"px";
-  marker.style.top=y+"px";
-  marker.style.display="block";
-
-  selectedPlayer={x,y};
-  updateStatus();
-});
-
-/* MARQUAGE TEMPS */
-
-document.getElementById("btnStart").addEventListener("click",function(){
-  if(!video.src){
-    alert("Importe une vidéo");
-    return;
-  }
-  startTime=video.currentTime;
-  updateStatus();
-  alert("Début marqué à "+startTime.toFixed(2)+"s");
-});
-
-document.getElementById("btnEnd").addEventListener("click",function(){
-  if(!video.src){
-    alert("Importe une vidéo");
-    return;
-  }
-  endTime=video.currentTime;
-  updateStatus();
-  alert("Fin marquée à "+endTime.toFixed(2)+"s");
-});
-
-/* ANALYSE */
-
-document.getElementById("btnAnalyze").addEventListener("click",function(){
-
-  if(!video.src){
-    alert("Importe une vidéo");
-    return;
-  }
-
-  if(!selectedPlayer){
-    alert("Sélectionne un joueur");
-    return;
-  }
-
-  if(startTime===null||endTime===null||endTime<=startTime){
-    alert("Marque début et fin correctement");
-    return;
-  }
-
-  const duration=endTime-startTime;
-
-  const score=70+Math.floor(Math.random()*20);
-  const winners=10+Math.floor(Math.random()*6);
-  const precision=70+Math.floor(Math.random()*20);
-
-  result.innerHTML=`
-  <div class="session">
-  <b>Score :</b> ${score}<br>
-  <b>Action :</b> ${startTime.toFixed(2)}s → ${endTime.toFixed(2)}s (${duration.toFixed(2)}s)<br>
-  <b>Winners :</b> ${winners}<br>
-  <b>Précision :</b> ${precision}%
-  </div>
-  `;
-
-  saveSession(score,winners,precision,duration);
-});
-
-/* STATUS */
-
-function updateStatus(){
-  statusBox.innerHTML=`
-  Joueur : ${selectedPlayer?"sélectionné":"non sélectionné"}<br>
-  Début : ${startTime!==null?startTime.toFixed(2)+"s":"-"}<br>
-  Fin : ${endTime!==null?endTime.toFixed(2)+"s":"-"}
-  `;
 }
 
-/* STOCKAGE */
+}
+
+})
+
+overlay.addEventListener("click",function(e){
+
+const rect=overlay.getBoundingClientRect()
+
+const x=e.clientX-rect.left
+const y=e.clientY-rect.top
+
+marker.style.left=x+"px"
+marker.style.top=y+"px"
+marker.style.display="block"
+
+selectedPlayer={x,y}
+
+})
+
+startRange.addEventListener("input",updateTimeInfo)
+endRange.addEventListener("input",updateTimeInfo)
+
+function updateTimeInfo(){
+
+const start=parseFloat(startRange.value)
+const end=parseFloat(endRange.value)
+
+timeInfo.innerHTML=
+`
+Début : ${start.toFixed(2)} s<br>
+Fin : ${end.toFixed(2)} s<br>
+Durée : ${(end-start).toFixed(2)} s
+`
+
+}
+
+function analyze(){
+
+const start=parseFloat(startRange.value)
+const end=parseFloat(endRange.value)
+
+if(!selectedPlayer){
+alert("Sélectionne un joueur")
+return
+}
+
+if(end<=start){
+alert("Fin doit être après début")
+return
+}
+
+const duration=end-start
+
+const score=70+Math.floor(Math.random()*20)
+const winners=10+Math.floor(Math.random()*6)
+const precision=70+Math.floor(Math.random()*20)
+
+document.getElementById("result").innerHTML=
+`
+<div class="session">
+Score : ${score}<br>
+Action : ${start.toFixed(2)}s → ${end.toFixed(2)}s<br>
+Durée : ${duration.toFixed(2)}s<br>
+Winners : ${winners}<br>
+Précision : ${precision}%
+</div>
+`
+
+saveSession(score,winners,precision,duration)
+
+}
 
 function saveSession(score,winners,precision,duration){
-  let sessions=JSON.parse(localStorage.getItem("sessions_v11")||"[]");
-  sessions.push({
-    date:new Date().toLocaleString(),
-    score,
-    winners,
-    precision,
-    duration
-  });
-  localStorage.setItem("sessions_v11",JSON.stringify(sessions));
-  renderSessions();
+
+let sessions=JSON.parse(localStorage.getItem("sessions_v12")||"[]")
+
+sessions.push({
+date:new Date().toLocaleString(),
+score,
+winners,
+precision,
+duration
+})
+
+localStorage.setItem("sessions_v12",JSON.stringify(sessions))
+
+renderSessions()
+
 }
 
 function renderSessions(){
-  const container=document.getElementById("sessions");
-  const sessions=JSON.parse(localStorage.getItem("sessions_v11")||"[]");
-  container.innerHTML="";
-  sessions.slice().reverse().forEach(s=>{
-    container.innerHTML+=`
-    <div class="session">
-    <b>Score ${s.score}</b> • ${s.date}<br>
-    Durée action : ${s.duration.toFixed(2)}s<br>
-    Winners ${s.winners} • Précision ${s.precision}%
-    </div>
-    `;
-  });
+
+const container=document.getElementById("sessions")
+
+const sessions=JSON.parse(localStorage.getItem("sessions_v12")||"[]")
+
+container.innerHTML=""
+
+sessions.reverse().forEach(s=>{
+
+container.innerHTML+=`
+<div class="session">
+Score ${s.score}<br>
+Durée ${s.duration.toFixed(2)}s<br>
+Winners ${s.winners} • Précision ${s.precision}%<br>
+${s.date}
+</div>
+`
+
+})
+
 }
 
-renderSessions();
-updateStatus();
+renderSessions()
+
 </script>
 
 </body>
