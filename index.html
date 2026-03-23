@@ -2,17 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Padel Video Analyzer</title>
+<title>Padel Video Analyzer V11</title>
 
 <style>
 body{
   background:#111;
   color:white;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   padding:20px;
 }
-h1,h2,h3{margin-bottom:12px}
 video{
   width:100%;
   max-height:420px;
@@ -26,6 +24,7 @@ video{
   inset:0;
   z-index:2;
   cursor:crosshair;
+  display:none;
 }
 #marker{
   position:absolute;
@@ -41,13 +40,17 @@ video{
 }
 button{
   margin-top:10px;
-  margin-right:8px;
-  padding:10px 15px;
+  margin-right:6px;
+  padding:10px 14px;
   border:none;
   border-radius:8px;
   background:#00ff9c;
   font-weight:bold;
   cursor:pointer;
+}
+button.secondary{
+  background:#333;
+  color:white;
 }
 .info{
   margin-top:10px;
@@ -60,14 +63,14 @@ button{
   padding:10px;
   margin-top:10px;
   border-radius:6px;
+  font-size:13px;
 }
 </style>
 </head>
 <body>
 
-<h1>Padel Analytics</h1>
+<h1>Analyse action padel</h1>
 
-<h3>1. Importer une vidéo</h3>
 <input type="file" id="videoInput" accept="video/*">
 
 <div id="videoContainer">
@@ -76,13 +79,16 @@ button{
   <div id="marker"></div>
 </div>
 
+<button id="selectModeBtn" class="secondary">
+Mode sélection joueur
+</button>
+
 <div class="info" id="statusBox">
-  Joueur : non sélectionné<br>
-  Début : -<br>
-  Fin : -
+Joueur : non sélectionné<br>
+Début : -<br>
+Fin : -
 </div>
 
-<h3>2. Marquer l’action</h3>
 <button id="btnStart">Marquer début</button>
 <button id="btnEnd">Marquer fin</button>
 <button id="btnAnalyze">Analyser action</button>
@@ -94,152 +100,157 @@ button{
 <div id="sessions"></div>
 
 <script>
-let selectedPlayer = null;
-let startTime = null;
-let endTime = null;
+let selectedPlayer=null;
+let startTime=null;
+let endTime=null;
+let selectMode=false;
 
-const video = document.getElementById("video");
-const overlay = document.getElementById("overlay");
-const marker = document.getElementById("marker");
-const result = document.getElementById("result");
-const statusBox = document.getElementById("statusBox");
+const video=document.getElementById("video");
+const overlay=document.getElementById("overlay");
+const marker=document.getElementById("marker");
+const statusBox=document.getElementById("statusBox");
+const result=document.getElementById("result");
+const selectBtn=document.getElementById("selectModeBtn");
 
-document.getElementById("videoInput").addEventListener("change", function(){
-  const file = this.files[0];
+document.getElementById("videoInput").addEventListener("change",function(){
+  const file=this.files[0];
   if(file){
-    video.src = URL.createObjectURL(file);
-    selectedPlayer = null;
-    startTime = null;
-    endTime = null;
-    marker.style.display = "none";
-    result.innerHTML = "";
+    video.src=URL.createObjectURL(file);
+    selectedPlayer=null;
+    startTime=null;
+    endTime=null;
+    marker.style.display="none";
+    result.innerHTML="";
     updateStatus();
   }
 });
 
-overlay.addEventListener("click", function(e){
-  if(!video.src){
-    alert("Importe d'abord une vidéo.");
-    return;
+/* MODE SELECTION JOUEUR */
+
+selectBtn.addEventListener("click",function(){
+  selectMode=!selectMode;
+
+  if(selectMode){
+    overlay.style.display="block";
+    selectBtn.textContent="Quitter sélection";
+  }else{
+    overlay.style.display="none";
+    selectBtn.textContent="Mode sélection joueur";
   }
+});
 
-  const rect = overlay.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+/* SELECTION JOUEUR */
 
-  marker.style.left = x + "px";
-  marker.style.top = y + "px";
-  marker.style.display = "block";
+overlay.addEventListener("click",function(e){
+  if(!video.src) return;
 
-  selectedPlayer = { x, y };
+  const rect=overlay.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+
+  marker.style.left=x+"px";
+  marker.style.top=y+"px";
+  marker.style.display="block";
+
+  selectedPlayer={x,y};
   updateStatus();
 });
 
-document.getElementById("btnStart").addEventListener("click", function(){
+/* MARQUAGE TEMPS */
+
+document.getElementById("btnStart").addEventListener("click",function(){
   if(!video.src){
-    alert("Importe d'abord une vidéo.");
+    alert("Importe une vidéo");
     return;
   }
-  startTime = video.currentTime;
+  startTime=video.currentTime;
   updateStatus();
-  alert("Début marqué à " + startTime.toFixed(2) + "s");
+  alert("Début marqué à "+startTime.toFixed(2)+"s");
 });
 
-document.getElementById("btnEnd").addEventListener("click", function(){
+document.getElementById("btnEnd").addEventListener("click",function(){
   if(!video.src){
-    alert("Importe d'abord une vidéo.");
+    alert("Importe une vidéo");
     return;
   }
-  endTime = video.currentTime;
+  endTime=video.currentTime;
   updateStatus();
-  alert("Fin marquée à " + endTime.toFixed(2) + "s");
+  alert("Fin marquée à "+endTime.toFixed(2)+"s");
 });
 
-document.getElementById("btnAnalyze").addEventListener("click", function(){
+/* ANALYSE */
+
+document.getElementById("btnAnalyze").addEventListener("click",function(){
+
   if(!video.src){
-    alert("Importe d'abord une vidéo.");
+    alert("Importe une vidéo");
     return;
   }
+
   if(!selectedPlayer){
-    alert("Clique d'abord sur le joueur.");
-    return;
-  }
-  if(startTime === null || endTime === null){
-    alert("Marque le début et la fin.");
-    return;
-  }
-  if(endTime <= startTime){
-    alert("La fin doit être après le début.");
+    alert("Sélectionne un joueur");
     return;
   }
 
-  const duration = endTime - startTime;
-  const score = 70 + Math.floor(Math.random()*20);
-  const winners = 10 + Math.floor(Math.random()*6);
-  const precision = 70 + Math.floor(Math.random()*20);
-  const service = 65 + Math.floor(Math.random()*20);
-  const volee = 60 + Math.floor(Math.random()*20);
-  const smash = 60 + Math.floor(Math.random()*20);
-  const bandeja = 55 + Math.floor(Math.random()*20);
+  if(startTime===null||endTime===null||endTime<=startTime){
+    alert("Marque début et fin correctement");
+    return;
+  }
 
-  result.innerHTML = `
-    <div class="session">
-      <b>Score :</b> ${score}<br>
-      <b>Action :</b> ${startTime.toFixed(2)}s → ${endTime.toFixed(2)}s (${duration.toFixed(2)}s)<br>
-      <b>Winners :</b> ${winners}<br>
-      <b>Précision :</b> ${precision}%<br>
-      <b>Service :</b> ${service}%<br>
-      <b>Volée :</b> ${volee}%<br>
-      <b>Smash :</b> ${smash}%<br>
-      <b>Bandeja :</b> ${bandeja}%
-    </div>
+  const duration=endTime-startTime;
+
+  const score=70+Math.floor(Math.random()*20);
+  const winners=10+Math.floor(Math.random()*6);
+  const precision=70+Math.floor(Math.random()*20);
+
+  result.innerHTML=`
+  <div class="session">
+  <b>Score :</b> ${score}<br>
+  <b>Action :</b> ${startTime.toFixed(2)}s → ${endTime.toFixed(2)}s (${duration.toFixed(2)}s)<br>
+  <b>Winners :</b> ${winners}<br>
+  <b>Précision :</b> ${precision}%
+  </div>
   `;
 
-  saveSession({
-    score,
-    winners,
-    precision,
-    service,
-    volee,
-    smash,
-    bandeja,
-    start: startTime,
-    end: endTime,
-    duration
-  });
+  saveSession(score,winners,precision,duration);
 });
 
+/* STATUS */
+
 function updateStatus(){
-  statusBox.innerHTML = `
-    Joueur : ${selectedPlayer ? "sélectionné" : "non sélectionné"}<br>
-    Début : ${startTime !== null ? startTime.toFixed(2) + "s" : "-"}<br>
-    Fin : ${endTime !== null ? endTime.toFixed(2) + "s" : "-"}
+  statusBox.innerHTML=`
+  Joueur : ${selectedPlayer?"sélectionné":"non sélectionné"}<br>
+  Début : ${startTime!==null?startTime.toFixed(2)+"s":"-"}<br>
+  Fin : ${endTime!==null?endTime.toFixed(2)+"s":"-"}
   `;
 }
 
-function saveSession(session){
-  let sessions = JSON.parse(localStorage.getItem("sessions_video") || "[]");
+/* STOCKAGE */
+
+function saveSession(score,winners,precision,duration){
+  let sessions=JSON.parse(localStorage.getItem("sessions_v11")||"[]");
   sessions.push({
-    date: new Date().toLocaleString(),
-    ...session
+    date:new Date().toLocaleString(),
+    score,
+    winners,
+    precision,
+    duration
   });
-  localStorage.setItem("sessions_video", JSON.stringify(sessions));
+  localStorage.setItem("sessions_v11",JSON.stringify(sessions));
   renderSessions();
 }
 
 function renderSessions(){
-  const container = document.getElementById("sessions");
-  const sessions = JSON.parse(localStorage.getItem("sessions_video") || "[]");
-  container.innerHTML = "";
-
-  sessions.slice().reverse().forEach(s => {
-    container.innerHTML += `
-      <div class="session">
-        <b>Score ${s.score}</b> • ${s.date}<br>
-        Action ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s (${s.duration.toFixed(2)}s)<br>
-        Winners ${s.winners} • Précision ${s.precision}%<br>
-        Service ${s.service}% • Volée ${s.volee}% • Smash ${s.smash}% • Bandeja ${s.bandeja}%
-      </div>
+  const container=document.getElementById("sessions");
+  const sessions=JSON.parse(localStorage.getItem("sessions_v11")||"[]");
+  container.innerHTML="";
+  sessions.slice().reverse().forEach(s=>{
+    container.innerHTML+=`
+    <div class="session">
+    <b>Score ${s.score}</b> • ${s.date}<br>
+    Durée action : ${s.duration.toFixed(2)}s<br>
+    Winners ${s.winners} • Précision ${s.precision}%
+    </div>
     `;
   });
 }
