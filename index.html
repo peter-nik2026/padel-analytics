@@ -2,246 +2,417 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Padel Video Analyzer PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Padel Analytics V13</title>
 
 <style>
-body{
-  background:#0f0f12;
-  color:white;
-  font-family:Arial;
-  padding:20px;
+:root{
+--bg:#0c0d11;
+--card:#17181e;
+--accent:#00ff9c;
+--accent2:#00b4ff;
+--text:#ffffff;
+--muted:#9a9a9a;
+--radius:18px;
+--nav:70px;
+font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
+
+body{
+margin:0;
+background:var(--bg);
+color:var(--text);
+}
+
+.page{
+display:none;
+padding:24px;
+padding-bottom:100px;
+}
+.page.active{display:block}
 
 h1{margin-bottom:20px}
 
-video{
-  width:100%;
-  max-height:420px;
-  background:black;
+.card{
+background:var(--card);
+border-radius:var(--radius);
+padding:20px;
+margin-bottom:16px;
 }
 
-.container{
-  position:relative;
-}
-
-#overlay{
-  position:absolute;
-  inset:0;
-  cursor:crosshair;
-}
-
-#marker{
-  position:absolute;
-  width:18px;
-  height:18px;
-  background:red;
-  border-radius:50%;
-  border:2px solid white;
-  transform:translate(-50%,-50%);
-  display:none;
-}
-
-.timeline{
-  margin-top:20px;
-}
-
-input[type=range]{
-  width:100%;
+.score{
+font-size:56px;
+font-weight:900;
+color:var(--accent);
 }
 
 button{
-  margin-top:15px;
-  padding:12px 16px;
-  border:none;
-  border-radius:8px;
-  background:#00ff9c;
-  font-weight:bold;
-  cursor:pointer;
+padding:12px 16px;
+border:none;
+border-radius:10px;
+background:var(--accent);
+font-weight:700;
+cursor:pointer;
+margin-top:10px;
+}
+
+button.secondary{
+background:#333;
+color:white;
+}
+
+video,img{
+width:100%;
+max-height:420px;
+object-fit:contain;
+background:black;
+}
+
+#videoContainer{
+position:relative;
+}
+
+#overlay{
+position:absolute;
+inset:0;
+display:none;
+cursor:crosshair;
+z-index:2;
+}
+
+#marker{
+position:absolute;
+width:18px;
+height:18px;
+background:red;
+border-radius:50%;
+border:2px solid white;
+transform:translate(-50%,-50%);
+display:none;
+pointer-events:none;
+z-index:3;
+}
+
+.stat-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+margin-top:16px;
+}
+
+.stat{
+background:#101217;
+padding:10px;
+border-radius:10px;
+text-align:center;
+}
+
+.stat span{
+display:block;
+margin-top:4px;
+font-weight:800;
+color:var(--accent);
+}
+
+.nav{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:var(--nav);
+background:#111;
+display:flex;
+justify-content:space-around;
+align-items:center;
+}
+
+.nav button{
+background:none;
+border:none;
+color:#888;
+cursor:pointer;
+}
+
+.nav button.active{
+color:var(--accent);
+}
+
+canvas{
+width:100%;
+height:200px;
+background:#101217;
+border-radius:16px;
+margin-top:16px;
 }
 
 .session{
-  background:#1e1e23;
-  padding:12px;
-  margin-top:10px;
-  border-radius:6px;
+background:#14161c;
+padding:14px;
+border-radius:10px;
+margin-top:10px;
 }
+
 </style>
 </head>
-
 <body>
 
-<h1>Analyse Action Padel</h1>
+<!-- DASHBOARD -->
+<section id="home" class="page active">
+<h1>Dashboard</h1>
+
+<div class="card">
+Score Global
+<div class="score" id="globalScore">78</div>
+</div>
+
+<canvas id="chart"></canvas>
+
+<button onclick="showPage('camera')">Analyse caméra</button>
+<button onclick="showPage('videoPage')" class="secondary">Analyse vidéo</button>
+
+</section>
+
+<!-- CAMERA -->
+<section id="camera" class="page">
+<h1>Capture caméra</h1>
+
+<video id="cameraVideo" autoplay playsinline muted></video>
+
+<button onclick="enableCamera()">Activer caméra</button>
+<button onclick="disableCamera()" class="secondary">Éteindre caméra</button>
+
+<button onclick="takePhoto()">Prendre photo</button>
+
+<img id="photoPreview">
+
+<button onclick="analyzeCamera()">Analyser</button>
+
+</section>
+
+<!-- VIDEO ANALYSIS -->
+<section id="videoPage" class="page">
+<h1>Analyse vidéo</h1>
 
 <input type="file" id="videoInput" accept="video/*">
 
-<div class="container">
-  <video id="video" controls></video>
-  <div id="overlay"></div>
-  <div id="marker"></div>
+<div id="videoContainer">
+<video id="videoPlayer" controls></video>
+<div id="overlay"></div>
+<div id="marker"></div>
 </div>
 
-<h3>Sélection de l'action</h3>
+<button id="toggleSelect">Mode sélection joueur</button>
 
-<div class="timeline">
-  Début :
-  <input type="range" id="startRange" min="0" step="0.1" value="0">
-  Fin :
-  <input type="range" id="endRange" min="0" step="0.1" value="0">
-</div>
+<h3>Sélection action</h3>
+
+Début :
+<input type="range" id="startRange" min="0" step="0.1" value="0">
+
+Fin :
+<input type="range" id="endRange" min="0" step="0.1" value="0">
 
 <div id="timeInfo"></div>
 
-<button onclick="analyze()">Analyser l'action</button>
+<button onclick="analyzeVideo()">Analyser action</button>
 
-<h2>Résultat</h2>
-<div id="result"></div>
+</section>
 
-<h2>Historique</h2>
+<!-- ANALYSIS -->
+<section id="analysis" class="page">
+<h1>Résultat</h1>
+
+<div class="card">
+<div class="score" id="analysisScore"></div>
+</div>
+
+<div class="stat-grid">
+<div class="stat">Winners<span id="statWinners"></span></div>
+<div class="stat">Précision<span id="statPrecision"></span></div>
+<div class="stat">Service<span id="statService"></span></div>
+</div>
+
+<button onclick="showPage('history')">Voir historique</button>
+
+</section>
+
+<!-- HISTORY -->
+<section id="history" class="page">
+<h1>Historique</h1>
 <div id="sessions"></div>
+</section>
+
+<!-- NAVIGATION -->
+<nav class="nav">
+<button onclick="showPage('home')" class="active">Accueil</button>
+<button onclick="showPage('camera')">Caméra</button>
+<button onclick="showPage('videoPage')">Vidéo</button>
+<button onclick="showPage('history')">Stats</button>
+</nav>
 
 <script>
 
-let selectedPlayer=null
+function showPage(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"))
+document.getElementById(id).classList.add("active")
+document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"))
+if(id==="home")document.querySelectorAll(".nav button")[0].classList.add("active")
+if(id==="camera")document.querySelectorAll(".nav button")[1].classList.add("active")
+if(id==="videoPage")document.querySelectorAll(".nav button")[2].classList.add("active")
+if(id==="history")document.querySelectorAll(".nav button")[3].classList.add("active")
+}
 
-const video=document.getElementById("video")
+/* CAMERA */
+
+let camStream=null
+let currentPhoto=null
+
+async function enableCamera(){
+camStream=await navigator.mediaDevices.getUserMedia({video:true})
+document.getElementById("cameraVideo").srcObject=camStream
+}
+
+function disableCamera(){
+if(camStream){
+camStream.getTracks().forEach(t=>t.stop())
+camStream=null
+}
+}
+
+function takePhoto(){
+const video=document.getElementById("cameraVideo")
+const canvas=document.createElement("canvas")
+canvas.width=video.videoWidth
+canvas.height=video.videoHeight
+canvas.getContext("2d").drawImage(video,0,0)
+currentPhoto=canvas.toDataURL("image/png")
+document.getElementById("photoPreview").src=currentPhoto
+}
+
+function analyzeCamera(){
+generateAnalysis()
+}
+
+/* VIDEO */
+
+let selectedPlayer=null
+let selectMode=false
+
+const videoPlayer=document.getElementById("videoPlayer")
 const overlay=document.getElementById("overlay")
 const marker=document.getElementById("marker")
 
-const startRange=document.getElementById("startRange")
-const endRange=document.getElementById("endRange")
-const timeInfo=document.getElementById("timeInfo")
-
 document.getElementById("videoInput").addEventListener("change",function(){
-
 const file=this.files[0]
-
 if(file){
-video.src=URL.createObjectURL(file)
-
-video.onloadedmetadata=function(){
-
-startRange.max=video.duration
-endRange.max=video.duration
-endRange.value=video.duration
-
+videoPlayer.src=URL.createObjectURL(file)
+videoPlayer.onloadedmetadata=function(){
+document.getElementById("startRange").max=videoPlayer.duration
+document.getElementById("endRange").max=videoPlayer.duration
+document.getElementById("endRange").value=videoPlayer.duration
 updateTimeInfo()
-
 }
-
 }
+})
 
+document.getElementById("toggleSelect").addEventListener("click",function(){
+selectMode=!selectMode
+overlay.style.display=selectMode?"block":"none"
+this.textContent=selectMode?"Quitter sélection":"Mode sélection joueur"
 })
 
 overlay.addEventListener("click",function(e){
-
 const rect=overlay.getBoundingClientRect()
-
 const x=e.clientX-rect.left
 const y=e.clientY-rect.top
-
 marker.style.left=x+"px"
 marker.style.top=y+"px"
 marker.style.display="block"
-
 selectedPlayer={x,y}
-
 })
 
-startRange.addEventListener("input",updateTimeInfo)
-endRange.addEventListener("input",updateTimeInfo)
+document.getElementById("startRange").addEventListener("input",updateTimeInfo)
+document.getElementById("endRange").addEventListener("input",updateTimeInfo)
 
 function updateTimeInfo(){
-
-const start=parseFloat(startRange.value)
-const end=parseFloat(endRange.value)
-
-timeInfo.innerHTML=
-`
-Début : ${start.toFixed(2)} s<br>
-Fin : ${end.toFixed(2)} s<br>
-Durée : ${(end-start).toFixed(2)} s
-`
-
+const start=document.getElementById("startRange").value
+const end=document.getElementById("endRange").value
+document.getElementById("timeInfo").innerHTML=
+`Début: ${Number(start).toFixed(2)}s | Fin: ${Number(end).toFixed(2)}s`
 }
 
-function analyze(){
-
-const start=parseFloat(startRange.value)
-const end=parseFloat(endRange.value)
-
+function analyzeVideo(){
 if(!selectedPlayer){
 alert("Sélectionne un joueur")
 return
 }
-
-if(end<=start){
-alert("Fin doit être après début")
-return
+generateAnalysis()
 }
 
-const duration=end-start
+/* ANALYSIS CORE */
+
+function generateAnalysis(){
+showPage("analysis")
 
 const score=70+Math.floor(Math.random()*20)
 const winners=10+Math.floor(Math.random()*6)
 const precision=70+Math.floor(Math.random()*20)
+const service=70+Math.floor(Math.random()*20)
 
-document.getElementById("result").innerHTML=
-`
-<div class="session">
-Score : ${score}<br>
-Action : ${start.toFixed(2)}s → ${end.toFixed(2)}s<br>
-Durée : ${duration.toFixed(2)}s<br>
-Winners : ${winners}<br>
-Précision : ${precision}%
-</div>
-`
+document.getElementById("analysisScore").textContent=score
+document.getElementById("statWinners").textContent=winners
+document.getElementById("statPrecision").textContent=precision+"%"
+document.getElementById("statService").textContent=service+"%"
 
-saveSession(score,winners,precision,duration)
-
+saveSession(score,winners,precision)
 }
 
-function saveSession(score,winners,precision,duration){
+/* STORAGE */
 
-let sessions=JSON.parse(localStorage.getItem("sessions_v12")||"[]")
-
-sessions.push({
-date:new Date().toLocaleString(),
-score,
-winners,
-precision,
-duration
-})
-
-localStorage.setItem("sessions_v12",JSON.stringify(sessions))
-
+function saveSession(score,winners,precision){
+let sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
+sessions.push({date:new Date().toLocaleString(),score,winners,precision})
+localStorage.setItem("sessions",JSON.stringify(sessions))
 renderSessions()
-
+updateScore()
 }
 
 function renderSessions(){
-
 const container=document.getElementById("sessions")
-
-const sessions=JSON.parse(localStorage.getItem("sessions_v12")||"[]")
-
+const sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
 container.innerHTML=""
-
 sessions.reverse().forEach(s=>{
-
 container.innerHTML+=`
 <div class="session">
-Score ${s.score}<br>
-Durée ${s.duration.toFixed(2)}s<br>
-Winners ${s.winners} • Précision ${s.precision}%<br>
-${s.date}
+Score ${s.score} | ${s.date}
 </div>
 `
-
 })
-
 }
 
+function updateScore(){
+const sessions=JSON.parse(localStorage.getItem("sessions")||"[]")
+if(!sessions.length)return
+const avg=Math.round(sessions.reduce((a,s)=>a+s.score,0)/sessions.length)
+document.getElementById("globalScore").textContent=avg
+}
+
+/* CHART SIMPLE */
+
+const ctx=document.getElementById("chart").getContext("2d")
+ctx.canvas.width=600
+ctx.canvas.height=200
+ctx.beginPath()
+ctx.moveTo(0,150)
+ctx.lineTo(100,120)
+ctx.lineTo(200,140)
+ctx.lineTo(300,110)
+ctx.lineTo(400,100)
+ctx.strokeStyle="#00ff9c"
+ctx.lineWidth=3
+ctx.stroke()
+
 renderSessions()
+updateScore()
 
 </script>
 
