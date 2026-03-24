@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Padel Analytics V14</title>
+<title>Padel Analytics V14.1</title>
 
 <style>
 :root{
@@ -147,18 +147,119 @@ canvas{
   margin-top:16px;
 }
 
-.session{
-  background:#14161c;
-  padding:14px;
-  border-radius:10px;
-  margin-top:10px;
-  font-size:13px;
-}
-
 #timeInfo{
   margin-top:6px;
   font-size:13px;
   color:var(--muted);
+}
+
+/* Historique moderne */
+.history-list{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.action-card{
+  background:linear-gradient(145deg,#16171d,#20212a);
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.04);
+}
+
+.action-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.action-type{
+  font-size:12px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:999px;
+  display:inline-block;
+}
+
+.action-type.video{
+  background:rgba(0,180,255,.12);
+  color:#7dd3fc;
+}
+
+.action-type.camera{
+  background:rgba(0,255,156,.12);
+  color:#86efac;
+}
+
+.action-score{
+  font-size:28px;
+  font-weight:900;
+  color:var(--accent);
+  line-height:1;
+}
+
+.action-date{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.action-time{
+  margin-top:10px;
+  font-size:13px;
+  color:#d1d5db;
+}
+
+.action-stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:14px;
+}
+
+.action-stat{
+  background:#101217;
+  border-radius:12px;
+  padding:10px;
+  text-align:center;
+}
+
+.action-stat-label{
+  font-size:11px;
+  color:var(--muted);
+}
+
+.action-stat-value{
+  margin-top:4px;
+  font-size:15px;
+  font-weight:800;
+  color:var(--accent);
+}
+
+.action-badge{
+  margin-top:12px;
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+}
+
+.action-badge.excellent{
+  background:rgba(0,255,156,.12);
+  color:#86efac;
+}
+
+.action-badge.good{
+  background:rgba(0,180,255,.12);
+  color:#7dd3fc;
+}
+
+.action-badge.average{
+  background:rgba(255,184,0,.12);
+  color:#fcd34d;
 }
 
 @media (max-width:600px){
@@ -173,7 +274,6 @@ canvas{
 </head>
 <body>
 
-<!-- DASHBOARD -->
 <section id="home" class="page active">
   <h1>Dashboard</h1>
 
@@ -188,7 +288,6 @@ canvas{
   <button onclick="showPage('videoPage')" class="secondary">Analyse vidéo</button>
 </section>
 
-<!-- CAMERA -->
 <section id="camera" class="page">
   <h1>Capture caméra</h1>
 
@@ -204,7 +303,6 @@ canvas{
   <button onclick="analyzeCamera()">Analyser</button>
 </section>
 
-<!-- VIDEO ANALYSIS -->
 <section id="videoPage" class="page">
   <h1>Analyse vidéo</h1>
 
@@ -231,7 +329,6 @@ canvas{
   <button onclick="analyzeVideo()">Analyser cette action</button>
 </section>
 
-<!-- ANALYSIS -->
 <section id="analysis" class="page">
   <h1>Résultat</h1>
 
@@ -248,13 +345,11 @@ canvas{
   <button onclick="showPage('history')">Voir historique</button>
 </section>
 
-<!-- HISTORY -->
 <section id="history" class="page">
   <h1>Historique des actions</h1>
   <div id="sessions"></div>
 </section>
 
-<!-- NAVIGATION -->
 <nav class="nav">
   <button onclick="showPage('home')" class="active">Accueil</button>
   <button onclick="showPage('camera')">Caméra</button>
@@ -274,7 +369,6 @@ function showPage(id){
 }
 
 /* CAMERA */
-
 let camStream=null;
 let currentPhoto=null;
 
@@ -305,7 +399,6 @@ function analyzeCamera(){
 }
 
 /* VIDEO */
-
 let selectedPlayer=null;
 let selectMode=false;
 
@@ -374,8 +467,7 @@ function analyzeVideo(){
   generateAnalysis("Vidéo", start, end);
 }
 
-/* ANALYSE COMMUNE (CAMÉRA / VIDÉO) */
-
+/* ANALYSE */
 function generateAnalysis(sourceType, start, end){
   showPage("analysis");
 
@@ -401,8 +493,7 @@ function generateAnalysis(sourceType, start, end){
   });
 }
 
-/* STORAGE / HISTORIQUE */
-
+/* STORAGE */
 function saveSession(sess){
   let sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
   sessions.push({
@@ -417,24 +508,69 @@ function saveSession(sess){
 function renderSessions(){
   const container=document.getElementById("sessions");
   const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
-  container.innerHTML="";
+
+  if(!sessions.length){
+    container.innerHTML=`
+      <div class="card">
+        Aucune action enregistrée pour le moment.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML=`<div class="history-list"></div>`;
+  const list=container.querySelector(".history-list");
+
   sessions.slice().reverse().forEach(s=>{
     const typeLabel = s.type || "Inconnu";
-    const timeLabel = (s.start!=null && s.end!=null)
-      ? `Action ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s (durée ${(s.duration||0).toFixed(2)}s)`
-      : `Action sans timing (capture caméra)`;
+    const typeClass = typeLabel.toLowerCase() === "vidéo" ? "video" : "camera";
 
-    container.innerHTML+=`
-      <div class="session">
-        <b>${typeLabel}</b> • Score ${s.score} • ${s.date}<br>
-        ${timeLabel}<br>
-        Winners ${s.winners} • Précision ${s.precision}% • Service ${s.service}%
+    const timeLabel = (s.start!=null && s.end!=null)
+      ? `Action analysée : ${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s • Durée ${(s.duration||0).toFixed(2)}s`
+      : `Capture instantanée analysée`;
+
+    let badgeLabel = "À améliorer";
+    let badgeClass = "average";
+    if(s.score >= 85){
+      badgeLabel = "Excellent niveau";
+      badgeClass = "excellent";
+    }else if(s.score >= 75){
+      badgeLabel = "Bonne exécution";
+      badgeClass = "good";
+    }
+
+    list.innerHTML += `
+      <div class="action-card">
+        <div class="action-top">
+          <div>
+            <div class="action-type ${typeClass}">${typeLabel}</div>
+            <div class="action-date">${s.date}</div>
+          </div>
+          <div class="action-score">${s.score}</div>
+        </div>
+
+        <div class="action-time">${timeLabel}</div>
+
+        <div class="action-stats">
+          <div class="action-stat">
+            <div class="action-stat-label">Winners</div>
+            <div class="action-stat-value">${s.winners}</div>
+          </div>
+          <div class="action-stat">
+            <div class="action-stat-label">Précision</div>
+            <div class="action-stat-value">${s.precision}%</div>
+          </div>
+          <div class="action-stat">
+            <div class="action-stat-label">Service</div>
+            <div class="action-stat-value">${s.service}%</div>
+          </div>
+        </div>
+
+        <div class="action-badge ${badgeClass}">${badgeLabel}</div>
       </div>
     `;
   });
 }
-
-/* SCORE GLOBAL */
 
 function updateScore(){
   const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
@@ -444,7 +580,6 @@ function updateScore(){
 }
 
 /* CHART SIMPLE */
-
 const ctx=document.getElementById("chart").getContext("2d");
 ctx.canvas.width=600;
 ctx.canvas.height=200;
