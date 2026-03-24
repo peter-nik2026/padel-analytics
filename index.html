@@ -3,63 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Padel Analytics V14.1</title>
+<title>Padel Analytics V14.2</title>
 
 <style>
 :root{
-  --bg:#0c0d11;
-  --card:#17181e;
+  --bg:#05060a;
+  --card:#14151b;
+  --card2:#1c1d25;
   --accent:#00ff9c;
   --accent2:#00b4ff;
   --text:#ffffff;
   --muted:#9a9a9a;
   --radius:18px;
-  --nav:70px;
+  --nav:72px;
   font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
+*{box-sizing:border-box;margin:0;padding:0}
+
 body{
-  margin:0;
   background:var(--bg);
   color:var(--text);
 }
 
+/* PAGES */
+
 .page{
   display:none;
   padding:24px;
-  padding-bottom:100px;
+  padding-bottom:calc(var(--nav) + 20px);
 }
 .page.active{display:block}
 
-h1{margin-bottom:20px}
+h1{
+  margin-bottom:18px;
+  font-size:26px;
+  font-weight:800;
+}
+
+/* CARDS */
 
 .card{
-  background:var(--card);
+  background:linear-gradient(135deg,var(--card),var(--card2));
   border-radius:var(--radius);
   padding:20px;
-  margin-bottom:16px;
+  margin-bottom:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
+/* SCORE */
+
 .score{
-  font-size:56px;
+  font-size:52px;
   font-weight:900;
-  color:var(--accent);
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
+
+/* BUTTONS */
 
 button{
   padding:12px 16px;
   border:none;
-  border-radius:10px;
-  background:var(--accent);
+  border-radius:12px;
   font-weight:700;
   cursor:pointer;
   margin-top:10px;
 }
 
-button.secondary{
-  background:#333;
-  color:white;
+.btn-main{
+  width:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  color:#001;
 }
+
+.btn-secondary{
+  background:#2a2a34;
+  color:var(--text);
+}
+
+/* VIDEO & IMAGE */
 
 video,img{
   width:100%;
@@ -67,8 +91,11 @@ video,img{
   object-fit:contain;
   background:black;
   display:block;
+  border-radius:14px;
   margin-bottom:8px;
 }
+
+/* VIDEO CONTAINER & SELECTION */
 
 #videoContainer{
   position:relative;
@@ -84,16 +111,18 @@ video,img{
 
 #marker{
   position:absolute;
-  width:18px;
-  height:18px;
+  width:20px;
+  height:20px;
   background:red;
   border-radius:50%;
-  border:2px solid white;
+  border:2px solid #fff;
   transform:translate(-50%,-50%);
   display:none;
   pointer-events:none;
   z-index:3;
 }
+
+/* GRID STATS (ANALYSE) */
 
 .stat-grid{
   display:grid;
@@ -104,8 +133,8 @@ video,img{
 
 .stat{
   background:#101217;
-  padding:10px;
   border-radius:10px;
+  padding:10px;
   text-align:center;
 }
 
@@ -116,36 +145,45 @@ video,img{
   color:var(--accent);
 }
 
+/* NAVIGATION */
+
 .nav{
   position:fixed;
   bottom:0;
   left:0;
   right:0;
   height:var(--nav);
-  background:#111;
+  background:#101118;
   display:flex;
   justify-content:space-around;
   align-items:center;
+  border-top:1px solid rgba(255,255,255,.04);
 }
 
 .nav button{
   background:none;
   border:none;
-  color:#888;
+  color:#777;
   cursor:pointer;
+  font-size:12px;
+  font-weight:600;
 }
 
 .nav button.active{
   color:var(--accent);
 }
 
+/* CHART */
+
 canvas{
   width:100%;
-  height:200px;
-  background:#101217;
+  height:180px;
+  background:#11121a;
   border-radius:16px;
-  margin-top:16px;
+  margin-top:14px;
 }
+
+/* TIMELINE VIDEO */
 
 #timeInfo{
   margin-top:6px;
@@ -153,7 +191,8 @@ canvas{
   color:var(--muted);
 }
 
-/* Historique moderne */
+/* HISTORY MODERNE */
+
 .history-list{
   display:flex;
   flex-direction:column;
@@ -161,26 +200,24 @@ canvas{
 }
 
 .action-card{
-  background:linear-gradient(145deg,#16171d,#20212a);
+  background:linear-gradient(145deg,#181924,#232433);
   border-radius:16px;
-  padding:16px;
-  box-shadow:0 8px 24px rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.04);
+  padding:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.05);
 }
 
-.action-top{
+.action-header{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  gap:10px;
 }
 
 .action-type{
-  font-size:12px;
-  font-weight:700;
-  padding:6px 10px;
+  padding:4px 10px;
   border-radius:999px;
-  display:inline-block;
+  font-size:11px;
+  font-weight:700;
 }
 
 .action-type.video{
@@ -194,54 +231,35 @@ canvas{
 }
 
 .action-score{
-  font-size:28px;
+  font-size:22px;
   font-weight:900;
   color:var(--accent);
-  line-height:1;
 }
 
 .action-date{
-  margin-top:6px;
-  font-size:12px;
+  margin-top:4px;
+  font-size:11px;
   color:var(--muted);
 }
 
 .action-time{
-  margin-top:10px;
+  margin-top:8px;
   font-size:13px;
   color:#d1d5db;
 }
 
 .action-stats{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
+  display:flex;
   gap:10px;
-  margin-top:14px;
-}
-
-.action-stat{
-  background:#101217;
-  border-radius:12px;
-  padding:10px;
-  text-align:center;
-}
-
-.action-stat-label{
-  font-size:11px;
-  color:var(--muted);
-}
-
-.action-stat-value{
-  margin-top:4px;
-  font-size:15px;
-  font-weight:800;
-  color:var(--accent);
+  margin-top:10px;
+  font-size:12px;
+  color:#e5e7eb;
 }
 
 .action-badge{
-  margin-top:12px;
+  margin-top:10px;
   display:inline-block;
-  padding:5px 10px;
+  padding:4px 10px;
   border-radius:999px;
   font-size:11px;
   font-weight:700;
@@ -265,7 +283,7 @@ canvas{
 @media (max-width:600px){
   .page{
     padding:16px;
-    padding-bottom:90px;
+    padding-bottom:calc(var(--nav) + 14px);
   }
   h1{font-size:22px;}
   .card{padding:16px;}
@@ -274,6 +292,7 @@ canvas{
 </head>
 <body>
 
+<!-- DASHBOARD -->
 <section id="home" class="page active">
   <h1>Dashboard</h1>
 
@@ -284,25 +303,27 @@ canvas{
 
   <canvas id="chart"></canvas>
 
-  <button onclick="showPage('camera')">Analyse caméra</button>
-  <button onclick="showPage('videoPage')" class="secondary">Analyse vidéo</button>
+  <button class="btn-main" onclick="showPage('camera')">Analyse caméra</button>
+  <button class="btn-secondary" onclick="showPage('videoPage')">Analyse vidéo</button>
 </section>
 
+<!-- CAMERA -->
 <section id="camera" class="page">
   <h1>Capture caméra</h1>
 
   <video id="cameraVideo" autoplay playsinline muted></video>
 
-  <button onclick="enableCamera()">Activer caméra</button>
-  <button onclick="disableCamera()" class="secondary">Éteindre caméra</button>
+  <button class="btn-main" onclick="enableCamera()">Activer caméra</button>
+  <button class="btn-secondary" onclick="disableCamera()">Éteindre caméra</button>
 
-  <button onclick="takePhoto()">Prendre photo</button>
+  <button class="btn-main" onclick="takePhoto()">Prendre photo</button>
 
   <img id="photoPreview">
 
-  <button onclick="analyzeCamera()">Analyser</button>
+  <button class="btn-main" onclick="analyzeCamera()">Analyser</button>
 </section>
 
+<!-- VIDEO ANALYSIS -->
 <section id="videoPage" class="page">
   <h1>Analyse vidéo</h1>
 
@@ -314,9 +335,9 @@ canvas{
     <div id="marker"></div>
   </div>
 
-  <button id="toggleSelect">Mode sélection joueur</button>
+  <button class="btn-secondary" id="toggleSelect">Mode sélection joueur</button>
 
-  <h3>Sélection de l'action</h3>
+  <h3 style="margin-top:16px;">Sélection de l'action</h3>
 
   Début :
   <input type="range" id="startRange" min="0" step="0.1" value="0">
@@ -326,9 +347,10 @@ canvas{
 
   <div id="timeInfo">Début: 0.00s | Fin: 0.00s | Durée: 0.00s</div>
 
-  <button onclick="analyzeVideo()">Analyser cette action</button>
+  <button class="btn-main" onclick="analyzeVideo()">Analyser cette action</button>
 </section>
 
+<!-- ANALYSIS RESULT -->
 <section id="analysis" class="page">
   <h1>Résultat</h1>
 
@@ -342,14 +364,16 @@ canvas{
     <div class="stat">Service<span id="statService"></span></div>
   </div>
 
-  <button onclick="showPage('history')">Voir historique</button>
+  <button class="btn-main" onclick="showPage('history')">Voir historique</button>
 </section>
 
+<!-- HISTORY -->
 <section id="history" class="page">
   <h1>Historique des actions</h1>
   <div id="sessions"></div>
 </section>
 
+<!-- NAV -->
 <nav class="nav">
   <button onclick="showPage('home')" class="active">Accueil</button>
   <button onclick="showPage('camera')">Caméra</button>
@@ -368,7 +392,7 @@ function showPage(id){
   if(id==="history")document.querySelectorAll(".nav button")[3].classList.add("active");
 }
 
-/* CAMERA */
+/* CAMERA LOGIC */
 let camStream=null;
 let currentPhoto=null;
 
@@ -386,6 +410,7 @@ function disableCamera(){
 
 function takePhoto(){
   const video=document.getElementById("cameraVideo");
+  if(!video.videoWidth){ alert("Caméra non prête."); return; }
   const canvas=document.createElement("canvas");
   canvas.width=video.videoWidth;
   canvas.height=video.videoHeight;
@@ -398,7 +423,7 @@ function analyzeCamera(){
   generateAnalysis("Caméra", null, null);
 }
 
-/* VIDEO */
+/* VIDEO LOGIC */
 let selectedPlayer=null;
 let selectMode=false;
 
@@ -445,8 +470,7 @@ function updateTimeInfo(){
   const start=parseFloat(startRange.value);
   const end=parseFloat(endRange.value);
   const duration=Math.max(0,end-start);
-  timeInfo.innerHTML=
-    `Début: ${start.toFixed(2)}s | Fin: ${end.toFixed(2)}s | Durée: ${duration.toFixed(2)}s`;
+  timeInfo.textContent = `Début: ${start.toFixed(2)}s | Fin: ${end.toFixed(2)}s | Durée: ${duration.toFixed(2)}s`;
 }
 
 function analyzeVideo(){
@@ -467,10 +491,9 @@ function analyzeVideo(){
   generateAnalysis("Vidéo", start, end);
 }
 
-/* ANALYSE */
-function generateAnalysis(sourceType, start, end){
+/* GENERIC ANALYSIS */
+function generateAnalysis(type, start, end){
   showPage("analysis");
-
   const score=70+Math.floor(Math.random()*20);
   const winners=10+Math.floor(Math.random()*6);
   const precision=70+Math.floor(Math.random()*20);
@@ -482,10 +505,10 @@ function generateAnalysis(sourceType, start, end){
   document.getElementById("statService").textContent=service+"%";
 
   saveSession({
-    type: sourceType,
+    type,
     start,
     end,
-    duration: (start!=null && end!=null)? (end-start) : null,
+    duration:(start!=null && end!=null)?(end-start):null,
     score,
     winners,
     precision,
@@ -493,7 +516,7 @@ function generateAnalysis(sourceType, start, end){
   });
 }
 
-/* STORAGE */
+/* STORAGE / HISTORY */
 function saveSession(sess){
   let sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
   sessions.push({
@@ -510,15 +533,11 @@ function renderSessions(){
   const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
 
   if(!sessions.length){
-    container.innerHTML=`
-      <div class="card">
-        Aucune action enregistrée pour le moment.
-      </div>
-    `;
+    container.innerHTML='<div class="card">Aucune action enregistrée pour le moment.</div>';
     return;
   }
 
-  container.innerHTML=`<div class="history-list"></div>`;
+  container.innerHTML='<div class="history-list"></div>';
   const list=container.querySelector(".history-list");
 
   sessions.slice().reverse().forEach(s=>{
@@ -541,37 +560,26 @@ function renderSessions(){
 
     list.innerHTML += `
       <div class="action-card">
-        <div class="action-top">
+        <div class="action-header">
           <div>
             <div class="action-type ${typeClass}">${typeLabel}</div>
             <div class="action-date">${s.date}</div>
           </div>
           <div class="action-score">${s.score}</div>
         </div>
-
         <div class="action-time">${timeLabel}</div>
-
         <div class="action-stats">
-          <div class="action-stat">
-            <div class="action-stat-label">Winners</div>
-            <div class="action-stat-value">${s.winners}</div>
-          </div>
-          <div class="action-stat">
-            <div class="action-stat-label">Précision</div>
-            <div class="action-stat-value">${s.precision}%</div>
-          </div>
-          <div class="action-stat">
-            <div class="action-stat-label">Service</div>
-            <div class="action-stat-value">${s.service}%</div>
-          </div>
+          <div>Winners ${s.winners}</div>
+          <div>Précision ${s.precision}%</div>
+          <div>Service ${s.service}%</div>
         </div>
-
         <div class="action-badge ${badgeClass}">${badgeLabel}</div>
       </div>
     `;
   });
 }
 
+/* GLOBAL SCORE */
 function updateScore(){
   const sessions=JSON.parse(localStorage.getItem("sessions_v14")||"[]");
   if(!sessions.length) return;
@@ -579,16 +587,17 @@ function updateScore(){
   document.getElementById("globalScore").textContent=avg;
 }
 
-/* CHART SIMPLE */
+/* SIMPLE CHART */
 const ctx=document.getElementById("chart").getContext("2d");
 ctx.canvas.width=600;
 ctx.canvas.height=200;
+ctx.clearRect(0,0,600,200);
 ctx.beginPath();
-ctx.moveTo(0,150);
-ctx.lineTo(100,120);
-ctx.lineTo(200,140);
-ctx.lineTo(300,110);
-ctx.lineTo(400,100);
+ctx.moveTo(20,150);
+ctx.lineTo(140,120);
+ctx.lineTo(260,140);
+ctx.lineTo(380,110);
+ctx.lineTo(500,100);
 ctx.strokeStyle="#00ff9c";
 ctx.lineWidth=3;
 ctx.stroke();
